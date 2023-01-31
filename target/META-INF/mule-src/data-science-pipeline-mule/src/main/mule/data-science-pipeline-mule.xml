@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:openai="http://www.mulesoft.org/schema/mule/openai"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:azure-storage="http://www.mulesoft.org/schema/mule/azure-storage" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/azure-storage http://www.mulesoft.org/schema/mule/azure-storage/current/mule-azure-storage.xsd
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/openai http://www.mulesoft.org/schema/mule/openai/current/mule-openai.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<azure-storage:config name="Azure_Storage_Config" doc:name="Azure Storage Config" doc:id="a4b3125f-b96a-4ed1-bc55-c8362af9520c" >
+		<azure-storage:sas-token-azure-connection accountName="fnddatasciencedemo" sasToken="?sv=2021-06-08&amp;ss=bfqt&amp;srt=sco&amp;sp=rwdlacupiytfx&amp;se=2023-01-31T21:36:54Z&amp;st=2023-01-26T13:36:54Z&amp;spr=https&amp;sig=tEBSMV4GtZkIr5NlW94ZlCqoknn2ebWjxRYF91d8xLo%3D" />
+	</azure-storage:config>
+	<kafka:consumer-config name="Apache_Kafka_Consumer_configuration" doc:name="Apache Kafka Consumer configuration" doc:id="cfb10076-73b2-4bb3-add5-ed1a78013b06" >
+		<kafka:consumer-plaintext-connection >
+			<kafka:bootstrap-servers >
+				<kafka:bootstrap-server value="tcp://cloud-services.demos.mulesoft.com:32267" />
+			</kafka:bootstrap-servers>
+			<kafka:topic-patterns >
+				<kafka:topic-pattern value="fnd-sales-analytics" />
+			</kafka:topic-patterns>
+		</kafka:consumer-plaintext-connection>
+	</kafka:consumer-config>
+	    <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="f526d2c9-4b3a-4747-9641-d6ad65373330" >
+                <salesforce:basic-connection username="saurav@codeondemand.io" password="&amp;7Yn*51nfldRW*21&amp;QMr" securityToken="hgEg2ic0siIDgM0qlne2c4nJ" />
+        </salesforce:sfdc-config>
+	<openai:config name="OpenAI_Config" doc:name="OpenAI Config" doc:id="5ab1b55f-b2c2-4bb3-a3b8-35f731081e4a" >
+		<openai:connection apiKey="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" />
+	</openai:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b7437629-6174-44dc-8887-c09bc8610701" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="e879235f-5fec-450e-bc40-570139ba0801" >
+		<file:connection workingDir="/Users/sbangaloremunibaire/Desktop/Files" />
+	</file:config>
+	<flow name="data-science-pipeline-muleFlow1" doc:id="cbdb0a6e-78b5-42ab-8123-2340f4fb4243" >
+		<http:listener doc:name="Listener" doc:id="ab946d13-df5e-4d25-afda-0545721e2656" path="/reset" config-ref="HTTP_Listener_config"/>
+		<kafka:seek doc:name="Seek" doc:id="6fb1aa65-28d7-4f73-a1ba-06f92ee4d0ed" config-ref="Apache_Kafka_Consumer_configuration" topic="fnd-sales-analytics" partition="0" offset="#[0]"/>
+	</flow>
+	<flow name="data-science-pipeline-muleFlow" doc:id="c6de85c5-fd6c-488a-b70f-835cde830302" >
+		<kafka:message-listener doc:name="Message listener" doc:id="5cc93c8a-b1e0-4b6e-9499-5524ffb384f7" config-ref="Apache_Kafka_Consumer_configuration"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="f0ecbbca-f87b-4aaf-baad-ad3bb5fe7273" >
+			<route >
+				<ee:transform doc:name="Classify Intents" doc:id="f8824c66-7fac-4262-b3ee-cbda06130c58">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="originalPayload"><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			</route>
+			<route >
+				<salesforce:query doc:name="Get Related Customer Communications" doc:id="43621ec3-0e46-4d71-abda-59772ebcca25" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query><![CDATA[SELECT Id, AccountId, Account.Name, CaseNumber, Description FROM Case WHERE AccountId != '']]></salesforce:salesforce-query>
+		</salesforce:query>
+				<ee:transform doc:name="Analyze Text Sentiments" doc:id="1622c842-8020-4dda-ae97-2111dc9d72b8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var sentiments = ["happy", "angry", "sad", "indifferent", "ballistic", "excited"]
+var idx = (round(random() * 100)) mod 5
+---
+{
+	sfdcCase: payload[0],
+	sentimentAnalysisResult: {
+		result: sentiments[idx]
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+		</scatter-gather>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="e356e462-a066-4cfe-9b3d-2420658fba9b" >
+			<route >
+				<openai:create-image-file doc:name="OpenAI Create Sentiment Image" doc:id="b8398b12-4ba5-405a-9d41-53594e0b3ee3" config-ref="OpenAI_Config" prompt='#[payload."1".payload.sentimentAnalysisResult.result]' />
+			</route>
+			<route >
+				<ee:transform doc:name="EnrichMessage" doc:id="ea155ea2-ed72-475b-9e6d-77e81c1a2ed6" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="5c36b861-97b9-472c-972c-cb11aa8c4936" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="imageFile" ><![CDATA[%dw 2.0
+import * from dw::core::Binaries
+output application/octet-stream
+---
+fromBase64(payload."0".payload)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[uuid()]" doc:name="FileNamePrefix" doc:id="5f31e755-55b7-4fb9-b336-47b6499b36cb" variableName="fileNamePrefix"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="67d2e44d-2578-46cf-8c9f-0c00f87524a2" >
+			<route >
+				<azure-storage:upload-blob doc:name="Upload Analysis" doc:id="ae5aca08-e597-49c5-9277-db5f9aa8005a" config-ref="Azure_Storage_Config">
+			<azure-storage:storblob container="analytics" fileName='#[vars.fileNamePrefix ++ ".json"]' fileStream='#[payload."1".payload]' />
+		</azure-storage:upload-blob>
+				<azure-storage:upload-blob doc:name="Upload Image" doc:id="d5980223-effa-4288-9348-3c390f282730" config-ref="Azure_Storage_Config">
+			<azure-storage:storblob container="analytics" fileName='#[vars.fileNamePrefix ++ ".png"]' fileStream="#[vars.imageFile]" />
+		</azure-storage:upload-blob>
+			</route>
+			<route >
+				<file:write doc:name="Write" doc:id="1307f12e-8f6f-4206-8839-739e628301f5" config-ref="File_Config" path='#[vars.fileNamePrefix ++ ".json"]'>
+					<file:content ><![CDATA[#[payload."1".payload]]]></file:content>
+				</file:write>
+				<file:write doc:name="Write" doc:id="3ac39485-fb79-47d7-98e6-10ede1371bcd" config-ref="File_Config" path='#[vars.fileNamePrefix ++ ".png"]'>
+					<file:content ><![CDATA[#[vars.imageFile]]]></file:content>
+				</file:write>
+			</route>
+		</scatter-gather>
+
+	</flow>
+</mule>

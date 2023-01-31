@@ -1,0 +1,15 @@
+{
+  "sfdcCase": {
+    "Account": [
+      {
+        "Name":"Panda Express" 
+      }
+    ],
+    "AccountId": "2f3e1f5a805d468eb79",
+    "CaseNumber": "vel",
+    "Id": "3adb35c4b1c54c4bb3c"
+  },
+  "sentimentAnalysisResult": {
+    "result": "happy"
+  }
+}

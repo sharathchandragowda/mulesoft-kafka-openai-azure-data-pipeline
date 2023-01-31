@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="EnrichedWithSentimentAnalysis" format="json">
+      <types:shape format="weave" example="example/enrichmentResult.json"><![CDATA[%dw 2.0
+
+type EnrichedWithSentimentAnalysis = {|
+  sfdcCase: {|
+    Account: Array<{| Name: String |}>, 
+    AccountId: String, 
+    CaseNumber: String, 
+    Id: String
+  |}, 
+  sentimentAnalysisResult: {| result: String |}
+|} {"example": "{\\\"sfdcCase\\\":{\\\"Account\\\":[{\\\"Name\\\":\\\"Panda Express\\\"}],\\\"AccountId\\\":\\\"2f3e1f5a805d468eb79\\\",\\\"CaseNumber\\\":\\\"vel\\\",\\\"Id\\\":\\\"3adb35c4b1c54c4bb3c\\\"},\\\"sentimentAnalysisResult\\\":{\\\"result\\\":\\\"happy\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#1622c842-8020-4dda-ae97-2111dc9d72b8">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="EnrichedWithSentimentAnalysis"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
